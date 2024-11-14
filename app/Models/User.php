@@ -2,66 +2,65 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-use Tymon\JWTAuth\Contracts\JWTSubject;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
-class User extends Authenticatable implements JWTSubject
+class User extends Model
 {
-    use HasFactory, Notifiable;
+    use SoftDeletes;  //allowing users to be soft deleted
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
+    //properties
+    protected $table = 'users';
+    
     protected $fillable = [
         'name',
         'email',
+        'phone',
+        'dob',
+        'status',
         'password',
+        'country_id',
+        'state_id',
+        'org_id',
+        'roles',
+        'preferences',
+        'image',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
-    protected $hidden = [
-        'password',
-        'remember_token',
+    protected $casts = [
+        'dob' => 'datetime',  //casting dob as a datetime
+        'preferences' => 'array',   //allowing it to be stored as JSON in the db and accessed as an array in the application
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
+
+    // Relationships or functions 
+    public function country()
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        return $this->belongsTo(Country::class);
     }
 
-    /**
-     * Get the identifier that will be stored in the JWT.
-     *
-     * @return mixed
-     */
-    public function getJWTIdentifier()
+    public function state()
     {
-        return $this->getKey();
+        return $this->belongsTo(State::class);
     }
 
-    /**
-     * Return a key-value array, containing any custom claims to be added to the JWT.
-     *
-     * @return array
-     */
-    public function getJWTCustomClaims()
+    public function organization()
     {
-        return [];
+        return $this->belongsTo(Organization::class, 'org_id');
+    }
+
+    public function permissions()
+    {
+        return $this->belongsToMany(Permission::class, 'user_permissions');
+    }
+    
+    public function roles()
+    {
+        return $this->belongsToMany(PermissionRole::class, 'permission_roles');
+    }
+
+    public function invitations()
+    {
+        return $this->hasMany(Invitation::class, 'invited_by');
     }
 }
